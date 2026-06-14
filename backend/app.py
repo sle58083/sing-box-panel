@@ -1,10 +1,12 @@
 import argparse
+import io
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 
+import qrcode
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
@@ -216,16 +218,15 @@ def get_node_url(name: str, username: str = Depends(require_user)) -> dict:
 
 
 @app.get("/api/nodes/{name}/qr")
-def get_node_qr(name: str, username: str = Depends(require_user)) -> dict:
-    name = singbox.validate_node_name(name)
-    with db() as conn:
-        row = conn.execute("SELECT name FROM nodes WHERE name = ?", (name,)).fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail="Node not found")
-    try:
-        return {"name": name, "qr": singbox.node_qr_text(name)}
-    except singbox.SingBoxError as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+def get_node_qr(name: str, username: str = Depends(require_user)) -> StreamingResponse:
+    data = get_node_url(name, username)["url"]
+    if not data:
+        raise HTTPException(status_code=404, detail="No URL available")
+    image = qrcode.make(data)
+    stream = io.BytesIO()
+    image.save(stream, format="PNG")
+    stream.seek(0)
+    return StreamingResponse(stream, media_type="image/png")
 
 
 @app.get("/api/nodes/{name}/info")

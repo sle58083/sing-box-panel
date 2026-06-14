@@ -126,6 +126,17 @@ function openDialog(title, text, preText = '') {
   $('#dialogTitle').textContent = title;
   $('#urlText').value = text || '';
   $('#dialogPre').textContent = preText || '';
+  $('#qrImage').hidden = true;
+  $('#qrImage').removeAttribute('src');
+  $('#nodeDialog').showModal();
+}
+
+function openQrDialog(name) {
+  $('#dialogTitle').textContent = `${name} QR`;
+  $('#urlText').value = '';
+  $('#dialogPre').textContent = '';
+  $('#qrImage').hidden = false;
+  $('#qrImage').src = `/api/nodes/${encodeURIComponent(name)}/qr?t=${Date.now()}`;
   $('#nodeDialog').showModal();
 }
 
@@ -153,8 +164,7 @@ async function handleNodeAction(event) {
     openDialog(`${name} URL`, data.url || '');
   }
   if (action === 'qr') {
-    const data = await api(`/api/nodes/${encodeURIComponent(name)}/qr`);
-    openDialog(`${name} QR`, '', data.qr || '');
+    openQrDialog(name);
   }
   if (action === 'info') {
     const data = await api(`/api/nodes/${encodeURIComponent(name)}/info`);
