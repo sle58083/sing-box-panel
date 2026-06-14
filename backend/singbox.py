@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 VALID_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
+ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 SING_BOX_SERVICE = os.environ.get("SING_BOX_SERVICE", "sing-box")
 
 protocol_map = {
@@ -22,6 +23,10 @@ protocol_map = {
 
 class SingBoxError(RuntimeError):
     pass
+
+
+def clean_output(value: str) -> str:
+    return ANSI_RE.sub("", value or "").strip()
 
 
 @dataclass(frozen=True)
@@ -58,7 +63,7 @@ def run_command(args: list[str], timeout: int = 30, check: bool = True) -> subpr
     except subprocess.TimeoutExpired as exc:
         raise SingBoxError(f"command timed out: {' '.join(args)}") from exc
     if check and result.returncode != 0:
-        message = (result.stderr or result.stdout or "command failed").strip()
+        message = clean_output(result.stderr or result.stdout or "command failed")
         raise SingBoxError(message)
     return result
 
@@ -170,11 +175,12 @@ def extract_name_from_output(output: str) -> str | None:
 
 
 def extract_url(output: str) -> str:
-    for line in output.splitlines():
+    cleaned = clean_output(output)
+    for line in cleaned.splitlines():
         stripped = line.strip()
         if "://" in stripped:
             return stripped
-    return output.strip()
+    return cleaned
 
 
 def add_node(protocol: str) -> dict:
@@ -182,7 +188,7 @@ def add_node(protocol: str) -> dict:
     before = snapshot_configs()
     cmd = detect_command()
     result = run_command([cmd, *protocol_map[protocol]], timeout=180)
-    output = result.stdout.strip()
+    output = clean_output(result.stdout)
     config_file = detect_new_config(before)
     name = extract_name_from_output(output) or validate_node_name(Path(config_file).stem)
     info = ""
@@ -202,15 +208,18 @@ def add_node(protocol: str) -> dict:
 def delete_node(name: str) -> str:
     name = validate_node_name(name)
     cmd = detect_command()
-    result = run_command([cmd, "del", name], timeout=120)
-    return result.stdout.strip()
+    result = run_command([cmd, "del", name], timeout=120, check=False)
+    output = clean_output((result.stdout or "") + "\n" + (result.stderr or ""))
+    if result.returncode != 0 and "已删除" not in output and "无法找到相关的配置文件" not in output:
+        raise SingBoxError(output or "delete command failed")
+    return output
 
 
 def node_info(name: str) -> str:
     name = validate_node_name(name)
     cmd = detect_command()
     result = run_command([cmd, "info", name], timeout=30)
-    return result.stdout.strip()
+    return clean_output(result.stdout)
 
 
 def node_url(name: str) -> str:
@@ -224,14 +233,14 @@ def node_qr_text(name: str) -> str:
     name = validate_node_name(name)
     cmd = detect_command()
     result = run_command([cmd, "qr", name], timeout=30)
-    return result.stdout.strip()
+    return clean_output(result.stdout)
 
 
 def service_status() -> dict:
     cmd = detect_command()
     result = run_command([cmd, "status"], timeout=30, check=False)
     active = "unknown"
-    output = (result.stdout or result.stderr).strip()
+    output = clean_output(result.stdout or result.stderr)
     if result.returncode == 0:
         lowered = output.lower()
         active = "active" if "running" in lowered or "active" in lowered else "ok"
@@ -248,20 +257,20 @@ def service_status() -> dict:
 def service_logs() -> str:
     cmd = detect_command()
     result = run_command([cmd, "log"], timeout=30, check=False)
-    if result.returncode == 0 and (result.stdout or result.stderr).strip():
-        return (result.stdout or result.stderr).strip()
+    if result.returncode == 0 and clean_output(result.stdout or result.stderr):
+        return clean_output(result.stdout or result.stderr)
     fallback = run_command(
         ["journalctl", "-u", SING_BOX_SERVICE, "--no-pager", "-n", "200"],
         timeout=30,
         check=False,
     )
-    return (fallback.stdout or fallback.stderr).strip()
+    return clean_output(fallback.stdout or fallback.stderr)
 
 
 def restart_service() -> str:
     cmd = detect_command()
     result = run_command([cmd, "restart"], timeout=60, check=False)
     if result.returncode == 0:
-        return result.stdout.strip()
+        return clean_output(result.stdout)
     fallback = run_command(["systemctl", "restart", SING_BOX_SERVICE], timeout=60)
-    return fallback.stdout.strip()
+    return clean_output(fallback.stdout)
