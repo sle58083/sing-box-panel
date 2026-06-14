@@ -1,0 +1,17 @@
+[Unit]
+Description=sing-box-panel FastAPI service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/sing-box-panel/backend
+Environment=PANEL_DB_PATH=/etc/sing-box-panel/panel.db
+Environment=PANEL_SECRET_PATH=/etc/sing-box-panel/session_secret
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/opt/sing-box-panel/venv/bin/uvicorn app:app --host 127.0.0.1 --port 54321
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sing-box-panel</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand compact">
+      <span class="brand-mark">S</span>
+      <div>
+        <h1>sing-box-panel</h1>
+        <p id="userLine">admin</p>
+      </div>
+    </div>
+    <button id="logoutBtn" class="ghost">退出</button>
+  </header>
+
+  <main class="layout">
+    <section class="stats-grid">
+      <article class="stat">
+        <span>节点总数</span>
+        <strong id="totalNodes">0</strong>
+      </article>
+      <article class="stat">
+        <span>启用节点</span>
+        <strong id="enabledNodes">0</strong>
+      </article>
+      <article class="stat">
+        <span>sing-box</span>
+        <strong id="serviceState">...</strong>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>添加节点</h2>
+      </div>
+      <form id="nodeForm" class="node-form compact-form">
+        <label>
+          协议
+          <select name="protocol">
+            <option value="reality">reality</option>
+            <option value="tuic">tuic</option>
+            <option value="trojan">trojan</option>
+            <option value="hysteria2">hysteria2</option>
+            <option value="anytls">anytls</option>
+            <option value="ss">ss</option>
+            <option value="vmess">vmess</option>
+            <option value="vless">vless</option>
+          </select>
+        </label>
+        <label>
+          到期时间
+          <input name="expire_at" type="date">
+        </label>
+        <button class="primary" type="submit">添加</button>
+      </form>
+      <p id="formMessage" class="message"></p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>节点列表</h2>
+        <button id="refreshBtn" class="ghost">刷新</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>协议</th>
+              <th>状态</th>
+              <th>到期</th>
+              <th>配置</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="nodesBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="split">
+      <article class="panel">
+        <div class="panel-head">
+          <h2>sing-box 状态</h2>
+          <div class="head-actions">
+            <button id="restartBtn" class="ghost">重启</button>
+            <button id="statusBtn" class="ghost">刷新</button>
+          </div>
+        </div>
+        <pre id="statusBox" class="terminal"></pre>
+      </article>
+      <article class="panel">
+        <div class="panel-head">
+          <h2>最近日志</h2>
+          <button id="logsBtn" class="ghost">刷新</button>
+        </div>
+        <pre id="systemLogsBox" class="terminal logs-terminal"></pre>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>审计日志</h2>
+      </div>
+      <div id="auditBox" class="logs"></div>
+    </section>
+  </main>
+
+  <dialog id="nodeDialog">
+    <div class="dialog-head">
+      <h3 id="dialogTitle">节点信息</h3>
+      <button id="closeDialog" class="icon">x</button>
+    </div>
+    <textarea id="urlText" readonly></textarea>
+    <pre id="dialogPre" class="terminal dialog-terminal"></pre>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>

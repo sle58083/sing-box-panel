@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sing-box-panel 登录</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="login-page">
+  <main class="login-shell">
+    <section class="login-card">
+      <div class="brand">
+        <span class="brand-mark">S</span>
+        <div>
+          <h1>sing-box-panel</h1>
+          <p>Web 管理面板</p>
+        </div>
+      </div>
+      <form id="loginForm" class="form">
+        <label>
+          用户名
+          <input id="username" name="username" autocomplete="username" value="admin" required>
+        </label>
+        <label>
+          密码
+          <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+        </label>
+        <button class="primary" type="submit">登录</button>
+        <p id="message" class="message"></p>
+      </form>
+    </section>
+  </main>
+  <script>
+    const form = document.querySelector('#loginForm');
+    const message = document.querySelector('#message');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      message.textContent = '';
+      const payload = {
+        username: form.username.value.trim(),
+        password: form.password.value
+      };
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        location.href = '/';
+        return;
+      }
+      const data = await res.json().catch(() => ({detail: '登录失败'}));
+      message.textContent = data.detail || '登录失败';
+    });
+  </script>
+</body>
+</html>

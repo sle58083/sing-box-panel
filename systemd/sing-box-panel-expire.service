@@ -1,0 +1,12 @@
+[Unit]
+Description=sing-box-panel expire worker
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/sing-box-panel/backend
+Environment=PANEL_DB_PATH=/etc/sing-box-panel/panel.db
+Environment=PANEL_SECRET_PATH=/etc/sing-box-panel/session_secret
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/opt/sing-box-panel/venv/bin/python expire_worker.py

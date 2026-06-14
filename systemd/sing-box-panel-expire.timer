@@ -1,0 +1,10 @@
+[Unit]
+Description=Run sing-box-panel expire worker every 10 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+Unit=sing-box-panel-expire.service
+
+[Install]
+WantedBy=timers.target
