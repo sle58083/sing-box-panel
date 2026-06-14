@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
-from auth import COOKIE_NAME, create_session, hash_password, verify_password, verify_session
+from auth import COOKIE_NAME, create_session, get_secret, hash_password, verify_password, verify_session
 from db import audit, db, init_db, row_to_dict, utc_now
 import singbox
 
@@ -278,6 +278,7 @@ app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
 
 def init_admin(username: str, password: str) -> None:
     init_db()
+    get_secret()
     now = utc_now()
     with db() as conn:
         exists = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()

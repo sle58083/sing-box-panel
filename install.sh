@@ -319,6 +319,7 @@ init_database_and_admin() {
   ADMIN_PASSWORD="$(openssl rand -base64 32 | tr -d '\n')"
   PANEL_DB_PATH="$DB_PATH" PANEL_SECRET_PATH="$SECRET_PATH" \
     "${APP_DIR}/venv/bin/python" "${APP_DIR}/backend/app.py" --init-admin --username admin --password "$ADMIN_PASSWORD"
+  [ -f "$SECRET_PATH" ] || openssl rand -base64 48 > "$SECRET_PATH"
   chmod 600 "$DB_PATH" "$SECRET_PATH"
 }
 
