@@ -9,7 +9,7 @@
 - 前端：原生 HTML/CSS/JavaScript，无构建工具
 - 后端只监听 `127.0.0.1:54321`
 - 默认通过 Nginx 反代暴露 `2053` 端口
-- 默认用户 `admin`，安装时随机生成强密码
+- 安装时手动输入面板用户名和密码，并要求重复确认密码
 - 密码使用 PBKDF2-SHA256 哈希保存
 - API 使用 HttpOnly Cookie 登录鉴权
 - 系统命令全部使用 `subprocess.run([...], shell=False)`
@@ -32,8 +32,8 @@ bash <(wget -qO- https://raw.githubusercontent.com/sle58083/sing-box-panel/main/
 安装完成后会输出：
 
 - 面板地址：`http://服务器IP:2053`
-- 用户名：`admin`
-- 随机密码
+- 你手动输入的用户名
+- 你手动输入并确认的密码
 
 凭据会保存到：
 

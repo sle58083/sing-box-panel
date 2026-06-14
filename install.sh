@@ -31,6 +31,7 @@ SOURCE_DIR=""
 TMP_DIR=""
 NGINX_CONFIG_PATH=""
 SERVER_IP=""
+ADMIN_USERNAME="${PANEL_ADMIN_USERNAME:-}"
 ADMIN_PASSWORD=""
 
 log_info() {
@@ -258,6 +259,50 @@ choose_panel_port() {
   fi
 }
 
+prompt_admin_credentials() {
+  if [ -z "$ADMIN_USERNAME" ]; then
+    local input_username=""
+    if [ -r /dev/tty ]; then
+      read -r -p "Panel admin username [admin]: " input_username </dev/tty || true
+    fi
+    ADMIN_USERNAME="${input_username:-admin}"
+  fi
+
+  if ! printf '%s' "$ADMIN_USERNAME" | grep -Eq '^[A-Za-z0-9_.-]{1,64}$'; then
+    die "Invalid admin username. Use 1-64 chars: letters, numbers, underscore, dash or dot."
+  fi
+
+  if [ -n "${PANEL_ADMIN_PASSWORD:-}" ]; then
+    ADMIN_PASSWORD="$PANEL_ADMIN_PASSWORD"
+    return
+  fi
+
+  if [ -r /dev/tty ]; then
+    local password_one=""
+    local password_two=""
+    while true; do
+      read -r -s -p "Panel admin password: " password_one </dev/tty || true
+      printf '\n' >/dev/tty
+      read -r -s -p "Confirm panel admin password: " password_two </dev/tty || true
+      printf '\n' >/dev/tty
+
+      if [ -z "$password_one" ]; then
+        log_warn "Password cannot be empty."
+        continue
+      fi
+      if [ "$password_one" != "$password_two" ]; then
+        log_warn "Passwords do not match. Please try again."
+        continue
+      fi
+      ADMIN_PASSWORD="$password_one"
+      break
+    done
+  else
+    ADMIN_PASSWORD="$(openssl rand -base64 32 | tr -d '\n')"
+    log_warn "No interactive tty available; generated a random admin password."
+  fi
+}
+
 prepare_source() {
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd || true)"
@@ -316,9 +361,9 @@ setup_python_venv() {
 }
 
 init_database_and_admin() {
-  ADMIN_PASSWORD="$(openssl rand -base64 32 | tr -d '\n')"
+  prompt_admin_credentials
   PANEL_DB_PATH="$DB_PATH" PANEL_SECRET_PATH="$SECRET_PATH" \
-    "${APP_DIR}/venv/bin/python" "${APP_DIR}/backend/app.py" --init-admin --username admin --password "$ADMIN_PASSWORD"
+    "${APP_DIR}/venv/bin/python" "${APP_DIR}/backend/app.py" --init-admin --username "$ADMIN_USERNAME" --password "$ADMIN_PASSWORD"
   [ -f "$SECRET_PATH" ] || openssl rand -base64 48 > "$SECRET_PATH"
   chmod 600 "$DB_PATH" "$SECRET_PATH"
 }
@@ -470,7 +515,7 @@ print_install_summary() {
   detect_server_ip
   cat > "$ADMIN_FILE" <<EOF
 URL: http://${SERVER_IP}:${PANEL_PORT}
-Username: admin
+Username: ${ADMIN_USERNAME}
 Password: ${ADMIN_PASSWORD}
 EOF
   chmod 600 "$ADMIN_FILE"
@@ -480,7 +525,7 @@ EOF
 sing-box-panel installed successfully.
 
 Panel URL:      http://${SERVER_IP}:${PANEL_PORT}
-Username:       admin
+Username:       ${ADMIN_USERNAME}
 Password:       ${ADMIN_PASSWORD}
 Install path:   ${APP_DIR}
 Database path:  ${DB_PATH}
