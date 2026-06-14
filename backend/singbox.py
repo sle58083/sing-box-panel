@@ -162,7 +162,7 @@ def extract_name_from_output(output: str) -> str | None:
     for raw in output.splitlines():
         line = raw.strip()
         for pattern in (
-            r"(?:name|节点|名称)\s*[:：]\s*([A-Za-z0-9_.-]{1,128})",
+            r"(?:name)\s*[:：]\s*([A-Za-z0-9_.-]{1,128})",
             r"\b([A-Za-z0-9][A-Za-z0-9_.-]{0,127})\.json\b",
         ):
             match = re.search(pattern, line, re.IGNORECASE)
@@ -205,12 +205,24 @@ def add_node(protocol: str) -> dict:
     }
 
 
+def enable_acceleration() -> dict:
+    cmd = detect_command()
+    result = run_command([cmd, "bbr"], timeout=180, check=False)
+    output = clean_output((result.stdout or "") + "\n" + (result.stderr or ""))
+    return {
+        "ok": result.returncode == 0,
+        "output": output,
+    }
+
+
 def delete_node(name: str) -> str:
     name = validate_node_name(name)
     cmd = detect_command()
     result = run_command([cmd, "del", name], timeout=120, check=False)
     output = clean_output((result.stdout or "") + "\n" + (result.stderr or ""))
-    if result.returncode != 0 and "已删除" not in output and "无法找到相关的配置文件" not in output:
+    deleted_text = "\u5df2\u5220\u9664"
+    missing_config_text = "\u65e0\u6cd5\u627e\u5230\u76f8\u5173\u7684\u914d\u7f6e\u6587\u4ef6"
+    if result.returncode != 0 and deleted_text not in output and missing_config_text not in output:
         raise SingBoxError(output or "delete command failed")
     return output
 

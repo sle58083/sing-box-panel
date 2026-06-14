@@ -145,6 +145,7 @@ def create_node(payload: NodeCreate, username: str = Depends(require_user)) -> d
             url = singbox.node_url(name)
         except Exception:
             url = ""
+        acceleration = singbox.enable_acceleration()
         with db() as conn:
             conn.execute(
                 """
@@ -160,8 +161,20 @@ def create_node(payload: NodeCreate, username: str = Depends(require_user)) -> d
                 """,
                 (name, payload.protocol, added["config_file"], url, payload.expire_at, now, now),
             )
-        audit("node_create", name, f"created by {username}; protocol={payload.protocol}")
-        return {"ok": True, "node": name, "url": url, "info": added.get("info", ""), "output": added.get("output", "")}
+        acceleration_status = "ok" if acceleration["ok"] else "failed"
+        audit(
+            "node_create",
+            name,
+            f"created by {username}; protocol={payload.protocol}; acceleration={acceleration_status}",
+        )
+        return {
+            "ok": True,
+            "node": name,
+            "url": url,
+            "info": added.get("info", ""),
+            "output": added.get("output", ""),
+            "acceleration": acceleration,
+        }
     except singbox.SingBoxError as exc:
         audit("node_create_failed", payload.protocol, str(exc))
         raise HTTPException(status_code=500, detail=str(exc)) from exc
