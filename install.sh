@@ -55,6 +55,10 @@ die() {
   exit 1
 }
 
+has_tty() {
+  { true </dev/tty; } >/dev/null 2>&1
+}
+
 ask_yes_no() {
   local prompt="$1"
   local default="${2:-n}"
@@ -62,7 +66,7 @@ ask_yes_no() {
   local suffix="[y/N]"
   [ "$default" = "y" ] && suffix="[Y/n]"
 
-  if [ -r /dev/tty ]; then
+  if has_tty; then
     read -r -p "${prompt} ${suffix} " answer </dev/tty || true
   else
     log_warn "No interactive tty available; using default answer '${default}' for: ${prompt}"
@@ -246,7 +250,7 @@ choose_panel_port() {
   fi
 
   local input=""
-  if [ -r /dev/tty ]; then
+  if has_tty; then
     read -r -p "Panel port [${DEFAULT_PANEL_PORT}]: " input </dev/tty || true
   fi
   PANEL_PORT="${input:-$DEFAULT_PANEL_PORT}"
@@ -266,7 +270,7 @@ prompt_admin_credentials() {
 
   if [ -z "$ADMIN_USERNAME" ]; then
     local input_username=""
-    if [ -r /dev/tty ]; then
+    if has_tty; then
       read -r -p "Panel admin username [admin]: " input_username </dev/tty || true
     fi
     ADMIN_USERNAME="${input_username:-admin}"
@@ -281,7 +285,7 @@ prompt_admin_credentials() {
     return
   fi
 
-  if [ -r /dev/tty ]; then
+  if has_tty; then
     local password_one=""
     local password_two=""
     while true; do
@@ -508,9 +512,9 @@ configure_selinux() {
 }
 
 detect_server_ip() {
-  SERVER_IP="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+  SERVER_IP="$(curl -fsS4 https://api.ipify.org 2>/dev/null || true)"
   if [ -z "$SERVER_IP" ]; then
-    SERVER_IP="$(curl -fsS4 https://api.ipify.org 2>/dev/null || true)"
+    SERVER_IP="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
   fi
   [ -n "$SERVER_IP" ] || SERVER_IP="SERVER_IP"
 }
