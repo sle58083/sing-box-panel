@@ -260,6 +260,10 @@ choose_panel_port() {
 }
 
 prompt_admin_credentials() {
+  if [ -n "$ADMIN_USERNAME" ] && [ -n "$ADMIN_PASSWORD" ]; then
+    return
+  fi
+
   if [ -z "$ADMIN_USERNAME" ]; then
     local input_username=""
     if [ -r /dev/tty ]; then
@@ -557,6 +561,7 @@ main() {
   check_systemd
   detect_package_manager
   choose_panel_port
+  prompt_admin_credentials
   install_dependencies
   install_sing_box
   prepare_source
