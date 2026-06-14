@@ -253,8 +253,10 @@ def service_status() -> dict:
     result = run_command([cmd, "status"], timeout=30, check=False)
     active = "unknown"
     output = clean_output(result.stdout or result.stderr)
-    if result.returncode == 0:
-        lowered = output.lower()
+    lowered = output.lower()
+    if "running" in lowered or "active" in lowered or "\u6b63\u5728\u8fd0\u884c" in output:
+        active = "active"
+    elif result.returncode == 0:
         active = "active" if "running" in lowered or "active" in lowered else "ok"
     else:
         active = "error"
