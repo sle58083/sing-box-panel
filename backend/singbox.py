@@ -16,8 +16,7 @@ protocol_map = {
     "hysteria2": ["add", "hy2", "auto"],
     "anytls": ["add", "anytls", "auto"],
     "ss": ["add", "ss", "auto"],
-    "vmess": ["add", "vmess", "auto"],
-    "vless": ["add", "vless", "auto"],
+    "shadowsocks": ["add", "ss", "auto"],
 }
 
 

@@ -14,6 +14,7 @@
 - API 使用 HttpOnly Cookie 登录鉴权
 - 系统命令全部使用 `subprocess.run([...], shell=False)`
 - 节点名、协议、配置路径和到期时间均做输入校验
+- 当前适配 233boy/sing-box 可创建协议：`reality`、`trojan`、`tuic`、`hysteria2`、`anytls`、`ss`、`shadowsocks`
 
 ## 安装
 
