@@ -477,6 +477,34 @@ enable_services() {
   systemctl enable --now sing-box-panel-expire.timer
 }
 
+verify_installation() {
+  log_info "Verifying installation..."
+
+  if ! systemctl is-active --quiet sing-box-panel.service; then
+    journalctl -u sing-box-panel -n 80 --no-pager || true
+    die "sing-box-panel.service is not active after installation."
+  fi
+
+  if ! systemctl is-active --quiet sing-box-panel-expire.timer; then
+    systemctl status sing-box-panel-expire.timer --no-pager || true
+    die "sing-box-panel-expire.timer is not active after installation."
+  fi
+
+  if ! nginx -t; then
+    die "nginx configuration test failed after panel config was installed."
+  fi
+
+  if ! curl -fsSI "http://${BACKEND_HOST}:${BACKEND_PORT}" >/dev/null; then
+    journalctl -u sing-box-panel -n 80 --no-pager || true
+    die "panel backend is not responding on ${BACKEND_HOST}:${BACKEND_PORT}."
+  fi
+
+  if ! curl -fsSI "http://127.0.0.1:${PANEL_PORT}" >/dev/null; then
+    systemctl status nginx --no-pager || true
+    die "nginx reverse proxy is not responding on port ${PANEL_PORT}."
+  fi
+}
+
 configure_firewall() {
   if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
     if ask_yes_no "ufw is active. Open TCP port ${PANEL_PORT}?" "n"; then
@@ -575,6 +603,7 @@ main() {
   setup_systemd_services
   enable_services
   setup_nginx
+  verify_installation
   configure_firewall
   configure_selinux
   print_install_summary
