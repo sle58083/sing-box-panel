@@ -128,7 +128,7 @@ def me(username: str = Depends(require_user)) -> dict:
 @app.get("/api/nodes")
 def list_nodes(username: str = Depends(require_user)) -> dict:
     with db() as conn:
-        rows = conn.execute("SELECT * FROM nodes ORDER BY created_at DESC").fetchall()
+        rows = conn.execute("SELECT * FROM nodes WHERE enabled = 1 ORDER BY created_at DESC").fetchall()
     return {"nodes": [row_to_dict(row) for row in rows]}
 
 
